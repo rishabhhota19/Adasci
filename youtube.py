@@ -2,17 +2,31 @@ video_id = "pTFZFxd4hOI"
 
 import os
 from dotenv import load_dotenv
-from llama_index.llms.gemini import Gemini
+from llama_index.llms.google import GoogleGemini
 from llama_index.core import Document
 from llama_index.core.tools import FunctionTool
-from llama_index.core.agent import FunctionCallingAgentWorker, AgentRunner
+from llama_index.core.agent import FunctionAgent
 from youtube_transcript_api import YouTubeTranscriptApi
 
 load_dotenv()
-llm = Gemini(model="models/gemini-1.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+MODEL_NAMES = [
+    "gemini-pro",
+    "gemini-1.0-pro",
+    "gemini-1.5-pro",
+    "gemini-2.0-pro",
+    "gemini-3.0-pro",
+    "models/gemini-pro",
+    "models/gemini-1.0-pro",
+    "models/gemini-1.5-pro",
+    "models/gemini-2.0-pro",
+    "models/gemini-3.0-pro"
+]
+
+llm = GoogleGemini(model="gemini-pro", api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_transcript(video_id: str) -> str:
-    return " ".join([s["text"] for s in YouTubeTranscriptApi.get_transcript(video_id)])
+    transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+    return " ".join([s["text"] for s in transcript_list])
 
 transcript = get_transcript(video_id)
 doc = Document(text=transcript)
@@ -66,14 +80,15 @@ tools_ent = [
 ]
 
 # Choose tools based on classification
+
 if classification == "educational":
-    agent_worker = FunctionCallingAgentWorker.from_tools(tools_edu, llm=llm, system_prompt="You are an educational assistant.")
+    agent_worker = FunctionAgent(tools=tools_edu, llm=llm, system_prompt="You are an educational assistant.")
 elif classification == "entertainment":
-    agent_worker = FunctionCallingAgentWorker.from_tools(tools_ent, llm=llm, system_prompt="You analyze entertainment videos.")
+    agent_worker = FunctionAgent(tools=tools_ent, llm=llm, system_prompt="You analyze entertainment videos.")
 else:
     raise ValueError("Unknown video classification")
 
-agent = AgentRunner(agent_worker)
+
 
 # Execute each tool
 print(f"Classification: {classification}\n")
