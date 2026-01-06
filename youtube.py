@@ -2,7 +2,7 @@ video_id = "pTFZFxd4hOI"
 
 import os
 from dotenv import load_dotenv
-from llama_index.llms.google import GoogleGemini
+from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.core import Document
 from llama_index.core.tools import FunctionTool
 from llama_index.core.agent import FunctionAgent
@@ -22,14 +22,14 @@ MODEL_NAMES = [
     "models/gemini-3.0-pro"
 ]
 
-llm = GoogleGemini(model="gemini-pro", api_key=os.getenv("GEMINI_API_KEY"))
+llm = GoogleGenAI(model="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_transcript(video_id: str) -> str:
-    transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-    return " ".join([s["text"] for s in transcript_list])
+    transcript_list = YouTubeTranscriptApi().fetch(video_id)
+    return " ".join([snippet.text for snippet in transcript_list])
 
-transcript = get_transcript(video_id)
-doc = Document(text=transcript)
+# transcript = get_transcript(video_id)
+# doc = Document(text=transcript)
 
 def classify(transcript: str) -> str:
     res = llm.complete(
@@ -40,7 +40,7 @@ def classify(transcript: str) -> str:
     ).text.strip().lower()
     return res if res in ("educational", "entertainment") else "unknown"
 
-classification = classify(doc.text)
+# classification = classify(doc.text)
 # Define educational tools
 tools_edu = [
     FunctionTool.from_defaults(
@@ -81,19 +81,8 @@ tools_ent = [
 
 # Choose tools based on classification
 
-if classification == "educational":
-    agent_worker = FunctionAgent(tools=tools_edu, llm=llm, system_prompt="You are an educational assistant.")
-elif classification == "entertainment":
-    agent_worker = FunctionAgent(tools=tools_ent, llm=llm, system_prompt="You analyze entertainment videos.")
-else:
-    raise ValueError("Unknown video classification")
-
-
-
-# Execute each tool
-print(f"Classification: {classification}\n")
-tools_to_run = tools_edu if classification == "educational" else tools_ent
-
-for tool in tools_to_run:
-    print(f"\n {tool.metadata.name}:")
-    result = tool(doc.text)
+# Execution block removed to prevent running on import
+if __name__ == "__main__":
+    print("Running test execution...")
+    # You can put the test logic here if needed
+    pass
